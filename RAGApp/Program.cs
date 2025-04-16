@@ -27,7 +27,30 @@ class Program
             await chromaClient.InitializeAsync();
 
             // Paso 1: Cargar documentos
-            string folderPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Documents");
+            // Encontrar la raíz del proyecto buscando el archivo .csproj
+            string currentDir = AppDomain.CurrentDomain.BaseDirectory;
+            string? projectRoot = null;
+
+            while (currentDir != null)
+            {
+                if (Directory.GetFiles(currentDir, "*.csproj").Any())
+                {
+                    projectRoot = currentDir;
+                    break;
+                }
+                currentDir = Directory.GetParent(currentDir)?.FullName;
+            }
+
+            if (projectRoot == null)
+            {
+                Log.Error("No se pudo encontrar la raíz del proyecto (directorio que contiene el archivo .csproj).");
+                throw new DirectoryNotFoundException("No se pudo encontrar la raíz del proyecto.");
+            }
+
+            Log.Information("Raíz del proyecto encontrada en: {ProjectRoot}", projectRoot);
+            string folderPath = Path.Combine(projectRoot, "Documents");
+            Log.Information("Buscando documentos en: {FolderPath}", folderPath);
+
             var documents = await DocumentLoader.LoadDocumentsAsync(folderPath);
             if (!documents.Any())
             {

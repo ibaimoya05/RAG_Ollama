@@ -1,5 +1,6 @@
 ﻿using System.Net.Http.Json;
 using Serilog;
+using System.Text.Json;
 
 namespace RAGApp;
 
@@ -54,18 +55,44 @@ public class OllamaClient
 
         try
         {
-            var requestBody = new { model = "llama3", prompt = prompt };
+            var requestBody = new { model = "llama3", prompt = prompt, stream = true }; // Forzar streaming
             var response = await _httpClient.PostAsJsonAsync("api/generate", requestBody);
             response.EnsureSuccessStatusCode();
 
-            var result = await response.Content.ReadFromJsonAsync<GenerateResponse>();
-            if (string.IsNullOrWhiteSpace(result?.Response))
+            var stream = await response.Content.ReadAsStreamAsync();
+            using var reader = new StreamReader(stream);
+            string? line;
+            string fullResponse = "";
+            bool isDone = false;
+
+            while ((line = await reader.ReadLineAsync()) != null && !isDone)
+            {
+                if (string.IsNullOrWhiteSpace(line)) continue;
+
+                try
+                {
+                    Log.Information("Línea JSON recibida: {Line}", line); 
+                    var json = JsonSerializer.Deserialize<GenerateResponse>(line);
+                    if (json != null)
+                    {
+                        fullResponse += json.Response ?? "";
+                        isDone = json.Done ?? false;
+                    }
+                }
+                catch (JsonException ex)
+                {
+                    Log.Error(ex, "Error al deserializar línea JSON: {Line}", line);
+                    throw;
+                }
+            }
+
+            if (string.IsNullOrWhiteSpace(fullResponse))
             {
                 Log.Error("Respuesta de generación vacía o inválida para el prompt: {Prompt}", prompt);
                 throw new InvalidOperationException("Respuesta de generación vacía.");
             }
 
-            return result.Response;
+            return fullResponse;
         }
         catch (HttpRequestException ex)
         {

@@ -23,10 +23,10 @@ public class ChromaClient
         // Verificar si la colección existe, y crearla si no
         try
         {
-            var collections = await _httpClient.GetFromJsonAsync<CollectionResponse>(
+            var collections = await _httpClient.GetFromJsonAsync<List<Collection>>(
                 $"/api/v2/tenants/{Tenant}/databases/{Database}/collections?tenant={Tenant}&database={Database}");
 
-            var collection = collections?.Collections?.FirstOrDefault(c => c.Name == CollectionName);
+            var collection = collections?.FirstOrDefault(c => c.Name == CollectionName);
             if (collection != null)
             {
                 _collectionId = collection.Id;
@@ -130,13 +130,14 @@ public class ChromaClient
     }
 }
 
-public class CollectionResponse
-{
-    public List<Collection>? Collections { get; set; }
-}
-
 public class Collection
 {
+    public string? Database { get; set; }
+    public int? Dimension { get; set; } // Cambiado a int? para permitir null
     public string? Id { get; set; }
+    public long? LogPosition { get; set; } // Cambiado a long? para permitir null
+    public Dictionary<string, object>? Metadata { get; set; }
     public string? Name { get; set; }
+    public string? Tenant { get; set; }
+    public int? Version { get; set; } // Cambiado a int? para permitir null
 }
