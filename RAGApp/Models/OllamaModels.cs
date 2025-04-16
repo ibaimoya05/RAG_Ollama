@@ -7,9 +7,9 @@ public class EmbeddingResponse
 
 public class GenerateResponse
 {
-    public string Response { get; set; } 
-    public bool? Done { get; set; } 
-    public string Model { get; set; } 
-    public DateTime? CreatedAt { get; set; } 
-    public int[] Context { get; set; } 
+    public string response { get; set; }
+    public bool? done { get; set; }
+    public string model { get; set; } // Opcional
+    public DateTime? created_at { get; set; } // Opcional
+    public int[] context { get; set; } // Opcional
 }

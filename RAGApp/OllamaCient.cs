@@ -55,7 +55,7 @@ public class OllamaClient
 
         try
         {
-            var requestBody = new { model = "llama3", prompt = prompt, stream = true }; // Forzar streaming
+            var requestBody = new { model = "llama3", prompt = prompt, stream = true };
             var response = await _httpClient.PostAsJsonAsync("api/generate", requestBody);
             response.EnsureSuccessStatusCode();
 
@@ -71,12 +71,16 @@ public class OllamaClient
 
                 try
                 {
-                    Log.Information("Línea JSON recibida: {Line}", line); 
+                    Log.Information("Línea JSON recibida: {Line}", line);
                     var json = JsonSerializer.Deserialize<GenerateResponse>(line);
                     if (json != null)
                     {
-                        fullResponse += json.Response ?? "";
-                        isDone = json.Done ?? false;
+                        if (!string.IsNullOrWhiteSpace(json.response))
+                        {
+                            fullResponse += json.response;
+                            Log.Information("Respuesta parcial acumulada: {FullResponse}", fullResponse);
+                        }
+                        isDone = json.done ?? false;
                     }
                 }
                 catch (JsonException ex)
